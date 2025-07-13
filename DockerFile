@@ -1,0 +1,18 @@
+# Use a lightweight Java Runtime Environment (JRE) as the base image
+FROM eclipse-temurin:17-jre-focal
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Spring Boot JAR file into the container
+# This assumes your build command (e.g., Maven's 'package' or Gradle's 'bootJar')
+# produces a JAR in 'target/' (Maven) or 'build/libs/' (Gradle)
+# Adjust the path if your JAR is located elsewhere.
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+
+# Expose the port your Spring Boot application listens on (default is 8080)
+EXPOSE 8080
+
+# Define the command to run your Spring Boot application
+ENTRYPOINT ["java", "-jar", "app.jar"]
