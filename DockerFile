@@ -1,15 +1,32 @@
-# Use a lightweight Java Runtime Environment (JRE) as the base image
-FROM eclipse-temurin:17-jre-focal
+# Use a lightweight Java Development Kit (JDK) for building
+# We use JDK here because we need 'mvnw' or 'gradlew' which requires a JDK.
+FROM eclipse-temurin:17-jdk-focal as builder
 
-# Set the working directory inside the container
+# Set the working directory inside the builder stage
 WORKDIR /app
 
-# Copy the Spring Boot JAR file into the container
-# This assumes your build command (e.g., Maven's 'package' or Gradle's 'bootJar')
-# produces a JAR in 'target/' (Maven) or 'build/libs/' (Gradle)
-# Adjust the path if your JAR is located elsewhere.
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
+# Copy the Maven Wrapper and project files
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+
+# Grant execute permissions to the Maven Wrapper
+RUN chmod +x mvnw
+
+# Build the Spring Boot application
+# This command generates the JAR file in the 'target/' directory
+RUN ./mvnw clean install -DskipTests
+
+# --- Second stage: Runtime image ---
+# Use a lightweight Java Runtime Environment (JRE) for the final application
+FROM eclipse-temurin:17-jre-focal
+
+# Set the working directory for the runtime stage
+WORKDIR /app
+
+# Copy the built JAR from the builder stage
+COPY --from=builder /app/target/*.jar app.jar
 
 # Expose the port your Spring Boot application listens on (default is 8080)
 EXPOSE 8080
